@@ -10,7 +10,7 @@ import random
 
 # Define the dataset directory and target instruments
 dataset_dir = "all-samples"
-target_instruments = {"guitar", "flute", "violin", "clarinet"}
+target_instruments = {"guitar", "flute", "violin", "clarinet", " trumpet", " cello", "saxophone"}
 train_csv = "train_metadata.csv"
 test_csv = "test_metadata.csv"
 split_ratio = 0.7  # 70% training, 30% testing
