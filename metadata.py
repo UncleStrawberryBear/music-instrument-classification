@@ -32,8 +32,10 @@ for instrument in target_instruments:
         test_files = files[split_idx:]
 
         # Append to metadata lists
-        train_metadata.extend([[file, instrument] for file in train_files])
-        test_metadata.extend([[file, instrument] for file in test_files])
+        #train_metadata.extend([[file, instrument] for file in train_files])
+        train_metadata.extend([[file.replace("\\", "/"), instrument] for file in train_files])
+        #test_metadata.extend([[file, instrument] for file in test_files])
+        test_metadata.extend([[file.replace("\\", "/"), instrument] for file in test_files])
 
 
 # Function to write metadata to CSV
