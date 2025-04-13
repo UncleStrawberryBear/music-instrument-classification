@@ -51,7 +51,7 @@ for i in range(len(test_ds)):
 
 test_features = np.array(test_features, dtype=np.float32).T  # (feat_dim, num_test_samples)
 test_features_torch = torch.from_numpy(test_features).to(DEFAULT_DEVICE)
-
+print(test_labels)
 # 5) 用 SRCClassifier 做分类
 src_model = SRCClassifier(sparsity=20, device=DEFAULT_DEVICE)
 src_model.fit(train_features_torch, train_labels)
@@ -66,7 +66,7 @@ for p, t in zip(preds, test_labels):
         correct += 1
 acc = correct / len(test_labels)
 print(f"Test Accuracy via SRC = {acc:.2%}")
-print(preds)
+
 # cm = confusion_matrix(test_labels, preds)
 # disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[
 #     "guitar", "flute", "violin", "clarinet", "trumpet", "cello", "saxophone"
