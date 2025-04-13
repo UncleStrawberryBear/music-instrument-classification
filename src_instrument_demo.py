@@ -7,6 +7,8 @@ from dataset import AudioInstrumentDataset
 from model import SRCMelFeatureExtractor
 from src_classifier import SRCClassifier
 from constants import SAMPLE_RATE, DEFAULT_DEVICE
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay #Newly added, for confusion matrix
+import matplotlib.pyplot as plt #Newly added
 
 # 例如，使用 0.5s 的音频
 sequence_length = int(SAMPLE_RATE * 0.5)
@@ -64,3 +66,14 @@ for p, t in zip(preds, test_labels):
         correct += 1
 acc = correct / len(test_labels)
 print(f"Test Accuracy via SRC = {acc:.2%}")
+
+cm = confusion_matrix(test_labels, preds)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[
+    "guitar", "flute", "violin", "clarinet", "trumpet", "cello", "saxophone"
+])
+fig, ax = plt.subplots(figsize=(8, 6))
+disp.plot(ax=ax, cmap="Blues", xticks_rotation=45)
+plt.title("Confusion Matrix for SRC Classifier")
+plt.show()
+
+
