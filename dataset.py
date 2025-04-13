@@ -34,7 +34,7 @@ class AudioInstrumentDataset(Dataset):
         self.device = device
 
         # Define instrument-to-one-hot mapping
-        self.instrument_map = {"guitar": 0, "flute": 1, "violin": 2, "clarinet": 3}
+        self.instrument_map = {"guitar": 0, "flute": 1, "violin": 2, "clarinet": 3, " trumpet":4, "cello":5, "saxophone":6}
         self.num_classes = len(self.instrument_map)
 
 
