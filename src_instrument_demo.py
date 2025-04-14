@@ -76,5 +76,5 @@ disp.plot(ax=ax, cmap="Blues", xticks_rotation=45)
 plt.title("Confusion Matrix for SRC Classifier")
 plt.show()
 plt.savefig("confusion_matrix.png")
-
+plt.close()
 
