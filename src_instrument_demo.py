@@ -67,13 +67,13 @@ for p, t in zip(preds, test_labels):
 acc = correct / len(test_labels)
 print(f"Test Accuracy via SRC = {acc:.2%}")
 
-# cm = confusion_matrix(test_labels, preds)
-# disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[
-#     "guitar", "flute", "violin", "clarinet", "trumpet", "cello", "saxophone"
-# ])
-# fig, ax = plt.subplots(figsize=(8, 6))
-# disp.plot(ax=ax, cmap="Blues", xticks_rotation=45)
-# plt.title("Confusion Matrix for SRC Classifier")
-# plt.show()
+cm = confusion_matrix(test_labels, preds)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[
+    "guitar", "flute", "violin", "clarinet", "trumpet", "cello", "saxophone"
+])
+fig, ax = plt.subplots(figsize=(8, 6))
+disp.plot(ax=ax, cmap="Blues", xticks_rotation=45)
+plt.title("Confusion Matrix for SRC Classifier")
+plt.show()
 
 
