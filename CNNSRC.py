@@ -29,7 +29,7 @@ def extract_cnn_features(dataset):
 
             mel_spec = cnn_model.mel_spectrogram(waveform)
             log_spec = cnn_model.log_transform(mel_spec)
-            cnn_input = log_spec.unsqueeze(1)  # (1, 1, M, T)
+            cnn_input = log_spec  # (1, 1, M, T)
 
             cnn_feat = cnn_model.cnn(cnn_input)  # (1, 128, h, w)
             pooled = cnn_model.adaptive_pool(cnn_feat)  # (1, 128, 1, 1)
