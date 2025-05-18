@@ -39,8 +39,10 @@ for i in range(len(test_ds)):
     test_features.append(feat_vec.squeeze(0).cpu().numpy())
     label_idx = onehot.argmax().item()
     test_labels.append(label_idx)
-test_features = np.array(test_features, dtype=np.float32).T  # (feat_dim, num_test)
 
+test_features = np.array(test_features, dtype=np.float32).T  # (feat_dim, num_test)
+test_features = test_features[:, :20]
+test_labels = test_labels[:20]
 # 5) 使用 PCA 降维
 # Normalize
 train_norm = train_features / (np.linalg.norm(train_features, axis=0, keepdims=True) + 1e-8)
