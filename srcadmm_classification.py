@@ -57,7 +57,7 @@ eigvecs = eigvecs[:, idx]
 
 # Select top-k to preserve 99.9% energy
 energy = np.cumsum(eigvals) / np.sum(eigvals)
-k_pca = np.argmax(energy >= 0.8)
+k_pca = np.argmax(energy >= 0.999)
 V_pca = eigvecs[:, :k_pca + 1]
 
 # Apply projection
