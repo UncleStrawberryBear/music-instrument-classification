@@ -52,7 +52,7 @@ loss_fn = torch.nn.MSELoss()
 optimizer = torch.optim.Adam(lista.parameters(), lr=1e-3)
 
 X_target = train_tensor
-Y_input = lista.D @ X_target
+Y_input = lista.D @ X_target.T
 
 for epoch in range(30):
     lista.train()
