@@ -1,83 +1,108 @@
 import torch
 import numpy as np
-from dataset import AudioInstrumentDataset
-from model import SRCMelFeatureExtractor
-from constants import SAMPLE_RATE, DEFAULT_DEVICE
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-import matplotlib.pyplot as plt
-from Lista_classifier import LISTA, SRCClassifierLISTA
 
-# 设置参数
-sequence_length = int(SAMPLE_RATE * 0.5)
 
-# 1. 加载数据
-train_ds = AudioInstrumentDataset("train_metadata.csv", sequence_length)
-test_ds = AudioInstrumentDataset("test_metadata.csv", sequence_length)
+def soft_threshold(x: torch.Tensor, tau: float) -> torch.Tensor:
+    return torch.sign(x) * torch.relu(torch.abs(x) - tau)
 
-# 2. 提取特征
-feature_extractor = SRCMelFeatureExtractor(sample_rate=SAMPLE_RATE).to(DEFAULT_DEVICE)
 
-def extract_features(dataset):
-    features, labels = [], []
-    for i in range(len(dataset)):
-        waveform, onehot = dataset[i]
-        feat_vec = feature_extractor(waveform.unsqueeze(0))
-        features.append(feat_vec.squeeze(0).cpu().numpy())
-        labels.append(onehot.argmax().item())
-    features = np.array(features, dtype=np.float32).T  # (feat_dim, num_samples)
-    return features, labels
+class LISTA(torch.nn.Module):
+    """
+    Trainable LISTA network as an unfolded sparse coder
+    """
+    def __init__(
+        self,
+        D: torch.Tensor,
+        depth: int = 10,
+        lambda_init: float = 0.1,
+        device: torch.device = torch.device('cpu')
+    ):
+        super().__init__()
+        self.device = device
+        self.depth = depth
+        self.D = D.to(device)                        # (m, N)
+        self.Dt = D.t().to(device)                   # (N, m)
+        self.N = D.shape[1]
 
-train_features, train_labels = extract_features(train_ds)
-test_features, test_labels = extract_features(test_ds)
+        # 初始化参数 W, S, threshold
+        self.W = torch.nn.Parameter(torch.eye(self.N, D.shape[0], device=device))  # (N, m)
+        self.S = torch.nn.Parameter(torch.eye(self.N, device=device))              # (N, N)
+        self.threshold = torch.nn.Parameter(lambda_init * torch.ones(depth, device=device))
 
-# 3. PCA 降维
-train_norm = train_features / (np.linalg.norm(train_features, axis=0, keepdims=True) + 1e-8)
-test_norm = test_features / (np.linalg.norm(test_features, axis=0, keepdims=True) + 1e-8)
-cov_train = train_norm @ train_norm.T
-eigvals, eigvecs = np.linalg.eigh(cov_train)
-idx = np.argsort(eigvals)[::-1]
-eigvecs = eigvecs[:, idx]
-energy = np.cumsum(eigvals[idx]) / np.sum(eigvals)
-k_pca = np.argmax(energy >= 0.99)
-V_pca = eigvecs[:, :k_pca + 1]
-train_pca = V_pca.T @ train_norm
-test_pca = V_pca.T @ test_norm
+    def forward(self, y: torch.Tensor) -> torch.Tensor:
+        """
+        y: (batch, m)
+        return: (batch, N)
+        """
+        x = torch.zeros((y.shape[0], self.N), device=self.device)
+        for t in range(self.depth):
+            x = soft_threshold(x @ self.S.T + y @ self.W.T, self.threshold[t])
+        return x
 
-train_tensor = torch.from_numpy(train_pca).to(DEFAULT_DEVICE)
-test_tensor = torch.from_numpy(test_pca).to(DEFAULT_DEVICE)
 
-# 4. 创建并训练 LISTA
-lista = LISTA(D=train_tensor, depth=10, device=DEFAULT_DEVICE)
-loss_fn = torch.nn.MSELoss()
-optimizer = torch.optim.Adam(lista.parameters(), lr=1e-3)
+class SRCClassifierLISTA:
+    """
+    Classification wrapper around a trained LISTA sparse coder
+    """
+    def __init__(self, lista_model: torch.nn.Module, labels: np.ndarray):
+        self.model = lista_model.eval()
+        self.labels = np.array(labels)
 
-X_target = train_tensor
-Y_input = lista.D @ X_target.T
+    def predict(self, Y: torch.Tensor) -> np.ndarray:
+        """
+        Y: (m, num_test) torch tensor
+        return: predicted label list
+        """
+        with torch.no_grad():
+            Y = Y.T  # shape (num_test, m)
+            x_hats = self.model(Y)  # shape (num_test, N)
 
-for epoch in range(30):
-    lista.train()
-    optimizer.zero_grad()
-    X_pred = lista(Y_input.T)
-    loss = loss_fn(X_pred, X_target.T)
-    loss.backward()
-    optimizer.step()
-    print(f"Epoch {epoch}: Loss = {loss.item():.4f}")
+            D = self.model.D        # (m, N)
+            preds = []
+            for i in range(x_hats.shape[0]):
+                x = x_hats[i]       # (N,)
+                y = Y[i]            # (m,)
+                residuals = []
+                for cls in sorted(set(self.labels)):
+                    mask = (self.labels == cls)
+                    x_c = torch.zeros_like(x)
+                    x_c[mask] = x[mask]
+                    y_c = D @ x_c
+                    r = (y - y_c).norm().item()
+                    residuals.append(r)
+                preds.append(int(np.argmin(residuals)))
+        return np.array(preds)
 
-# 5. SRC 分类 + 评估
-classifier = SRCClassifierLISTA(lista_model=lista, labels=np.array(train_labels))
-preds = classifier.predict(test_tensor)
 
-acc = np.mean(preds == np.array(test_labels))
-print(f"Test Accuracy via SRC + LISTA + PCA = {acc:.2%}")
+if __name__ == '__main__':
+    # 模拟数据
+    m, N, num_train = 249, 3804, 249
+    D = torch.randn(m, N)
+    labels = np.repeat(np.arange(7), N // 7)
 
-# 6. 混淆矩阵
-cm = confusion_matrix(test_labels, preds)
-disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[
-    "guitar", "flute", "violin", "clarinet", "trumpet", "cello", "saxophone"
-])
-fig, ax = plt.subplots(figsize=(8, 6))
-disp.plot(ax=ax, cmap="Blues", xticks_rotation=45)
-plt.title("Confusion Matrix for SRC + LISTA + PCA")
-plt.tight_layout()
-plt.savefig("confusion_matrix_lista.png")
-plt.show()
+    # 初始化 LISTA 模型
+    lista_model = LISTA(D, depth=10, device=D.device)
+
+    # 定义目标稀疏表示 (假设给出)
+    X_target = torch.randn(num_train, N)       # shape: (batch, N)
+    Y_input = D @ X_target.T                   # shape: (m, batch)
+
+    # 定义 loss 和优化器
+    loss_fn = torch.nn.MSELoss()
+    optimizer = torch.optim.Adam(lista_model.parameters(), lr=1e-3)
+
+    # 训练 loop
+    for epoch in range(30):
+        lista_model.train()
+        optimizer.zero_grad()
+        X_pred = lista_model(Y_input.T)        # input shape: (batch, m)
+        loss = loss_fn(X_pred, X_target)       # shape match: (batch, N)
+        loss.backward()
+        optimizer.step()
+        print(f"Epoch {epoch}: Loss = {loss.item():.4f}")
+
+    # 分类器测试（optional）
+    classifier = SRCClassifierLISTA(lista_model, labels[:N])
+    Y_test = torch.randn(m, 10)
+    preds = classifier.predict(Y_test)
+    print('Predicted labels:', preds)
