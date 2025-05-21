@@ -94,7 +94,7 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(lista_model.parameters(), lr=1e-3)
 
     # 训练 loop
-    for epoch in range(100):
+    for epoch in range(150):
         lista_model.train()
         optimizer.zero_grad()
         X_pred = lista_model(Y_input.T)        # input shape: (batch, m)
