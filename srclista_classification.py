@@ -104,7 +104,21 @@ if __name__ == '__main__':
         print(f"Epoch {epoch}: Loss = {loss.item():.4f}")
 
     # 分类器测试（optional）
+    #classifier = SRCClassifierLISTA(lista_model, labels)
+    #Y_test = torch.randn(m, 10)
+    #preds = classifier.predict(Y_test)
+    #print('Predicted labels:', preds)
+    # 分类器测试（optional）
     classifier = SRCClassifierLISTA(lista_model, labels)
-    Y_test = torch.randn(m, 10)
+
+    # 从字典中采样 10 个测试样本（使用真实的字典列和标签）
+    indices = np.random.choice(N, 10, replace=False)
+    Y_test = D[:, indices]                   # shape: (m, 10)
+    true_labels = labels[indices]           # shape: (10,)
+
+    # 预测
     preds = classifier.predict(Y_test)
+
+    # 打印对比
+    print('True labels     :', true_labels)
     print('Predicted labels:', preds)
