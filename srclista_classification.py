@@ -57,7 +57,17 @@ labels = np.array(train_labels)
 lista_model = LISTA(D, depth=10, device=DEFAULT_DEVICE)
 optimizer = torch.optim.Adam(lista_model.parameters(), lr=1e-3)
 loss_fn = torch.nn.MSELoss()
-X_target = torch.eye(D.shape[1], device=DEFAULT_DEVICE)
+
+# 设 N = 样本数, C = 类别数
+N = D.shape[1]
+labels = np.array(train_labels)
+C = len(np.unique(labels))
+
+X_target = torch.zeros((N, N), device=DEFAULT_DEVICE)
+for i in range(N):
+    for j in range(N):
+        if labels[i] == labels[j]:
+            X_target[i, j] = 1.0  # 或者可加噪：torch.randn(1).item()
 Y_input = D @ X_target
 
 for epoch in range(1):
