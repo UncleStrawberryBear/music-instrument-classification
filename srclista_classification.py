@@ -60,7 +60,7 @@ loss_fn = torch.nn.MSELoss()
 X_target = torch.eye(D.shape[1], device=DEFAULT_DEVICE)
 Y_input = D @ X_target
 
-for epoch in range(30):
+for epoch in range(5):
     lista_model.train()
     optimizer.zero_grad()
     X_pred = lista_model(Y_input.T)
