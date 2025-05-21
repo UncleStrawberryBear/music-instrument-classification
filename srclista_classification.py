@@ -47,6 +47,7 @@ class SRCClassifierLISTA:
     def __init__(self, lista_model: torch.nn.Module, labels: np.ndarray):
         self.model = lista_model.eval()
         self.labels = np.array(labels)
+        assert len(self.labels) == self.model.D.shape[1], "标签长度与字典样本数不一致！"
 
     def predict(self, Y: torch.Tensor) -> np.ndarray:
         """
@@ -78,7 +79,8 @@ if __name__ == '__main__':
     # 模拟数据
     m, N, num_train = 249, 3804, 249
     D = torch.randn(m, N)
-    labels = np.repeat(np.arange(7), N // 7)
+    labels = np.tile(np.arange(7), int(np.ceil(N / 7)))[:N]  # 修复标签长度不一致的问题
+    assert len(labels) == N
 
     # 初始化 LISTA 模型
     lista_model = LISTA(D, depth=10, device=D.device)
@@ -102,7 +104,7 @@ if __name__ == '__main__':
         print(f"Epoch {epoch}: Loss = {loss.item():.4f}")
 
     # 分类器测试（optional）
-    classifier = SRCClassifierLISTA(lista_model, labels[:N])
+    classifier = SRCClassifierLISTA(lista_model, labels)
     Y_test = torch.randn(m, 10)
     preds = classifier.predict(Y_test)
     print('Predicted labels:', preds)
