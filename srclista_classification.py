@@ -70,7 +70,7 @@ for i in range(N):
             X_target[i, j] = 1.0  # 或者可加噪：torch.randn(1).item()
 Y_input = D @ X_target
 
-for epoch in range(1):
+for epoch in range(100):
     lista_model.train()
     optimizer.zero_grad()
     X_pred = lista_model(Y_input.T)
