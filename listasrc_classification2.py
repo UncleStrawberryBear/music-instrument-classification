@@ -46,7 +46,8 @@ def pca_projection(X, energy_keep=0.999):
     return V.T @ Xn, V          # (k, num), (k, feat_dim)
 
 train_pca, V = pca_projection(train_feats)
-test_pca  = V @ (test_feats / (np.linalg.norm(test_feats, axis=0, keepdims=True)+1e-8))
+#test_pca  = V @ (test_feats / (np.linalg.norm(test_feats, axis=0, keepdims=True)+1e-8))
+test_pca = V.T @ (test_feats / (np.linalg.norm(test_feats, axis=0, keepdims=True) + 1e-8))
 
 # ---------- 转成 Torch ---------- #
 train_torch = torch.from_numpy(train_pca).to(DEFAULT_DEVICE)   # (k, N)
