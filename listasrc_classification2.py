@@ -7,7 +7,7 @@ import numpy as np
 from dataset import AudioInstrumentDataset
 from model import SRCMelFeatureExtractor
 from constants import SAMPLE_RATE, DEFAULT_DEVICE
-from listasrc import SRCClassifierLISTA
+from listasrc2 import SRCClassifierLISTA
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
 
