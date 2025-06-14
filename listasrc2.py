@@ -10,11 +10,14 @@ from typing import Sequence, List
 
 def soft_threshold(x: torch.Tensor, tau: torch.Tensor) -> torch.Tensor:
     """逐元素 soft‑threshold"""
+    # x:[n,1] A column vector
+    # tau: constant
     return torch.sign(x) * torch.relu(x.abs() - tau)
 
 
 def spectral_norm_sq(mat: torch.Tensor) -> float:
     """‖M‖₂² (最大奇异值平方)"""
+    # mat:[m,m] square matrix
     return torch.linalg.svdvals(mat)[0].pow(2).item()
 
 # ---------- Coupled‑LISTA 网络 ---------- #
@@ -33,6 +36,7 @@ class LISTA(torch.nn.Module):
         learn_theta: bool = False,
         device: torch.device = torch.device("cpu"),
     ):
+        # A:[]
         super().__init__()
         self.register_buffer("A", A.to(device))
         self.register_buffer("At", A.t().to(device))
@@ -41,19 +45,20 @@ class LISTA(torch.nn.Module):
         self.N = A.shape[1]
 
         # —— 初始化 B ——
-        L = spectral_norm_sq(A)
-        B_init = self.At / L                      # (N, m)
+        L = spectral_norm_sq(A)                   # constant
+        B_init = self.At / L                      # (N, m),W1
         self.B = torch.nn.Parameter(B_init, requires_grad=learn_B)
 
         # —— 初始化 θ_k ——
-        theta0 = lam / L
-        theta_vec = theta0 * torch.ones(depth, device=device)
+        theta0 = lam / L                           # constant
+        theta_vec = theta0 * torch.ones(depth, device=device)  # (depth,):vector which stores all the thetas.
         self.theta = torch.nn.Parameter(theta_vec, requires_grad=learn_theta)
 
     def forward(self, y: torch.Tensor) -> torch.Tensor:
         """y: (batch, m) → x_hat: (batch, N)"""
+        # x:
         I = torch.eye(self.N, device=self.device)
-        S = I - self.B @ self.A                    # W2 = I − BA
+        S = I - self.B @ self.A                    # W2 = I − BA, [N,N] square matrix
         x = torch.zeros(y.size(0), self.N, device=self.device)
         for k in range(self.depth):
             x = soft_threshold(x @ S.T + y @ self.B.T, self.theta[k])
