@@ -101,7 +101,7 @@ class SRCClassifierLISTA:
 
         # ⚠ A = D.T → (m=N_feat, N_samples)
         self.model = LISTA(
-            A=D.t(),
+            A=D,           #(m,N)
             depth=self.depth,
             lam=self.lam,
             learn_B=self.learn_B,
