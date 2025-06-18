@@ -12,7 +12,7 @@ def soft_threshold(x: torch.Tensor, tau: torch.Tensor) -> torch.Tensor:
     """逐元素 soft‑threshold"""
     # x:[n,1] A column vector
     # tau: constant
-    return torch.sign(x) * torch.relu(x.abs() - tau)
+    return torch.sign(x) * torch.relu(x.abs() - tau)#This coincides with the paper
 
 
 def spectral_norm_sq(mat: torch.Tensor) -> float:
@@ -29,7 +29,7 @@ class LISTA(torch.nn.Module):
 
     def __init__(
         self,
-        A: torch.Tensor,                # (m, N) 字典 / 测量矩阵
+        A: torch.Tensor,                # (m, N) dictionary matrix
         depth: int = 10,
         lam: float = 0.1,
         learn_B: bool = False,
@@ -56,13 +56,14 @@ class LISTA(torch.nn.Module):
 
     def forward(self, y: torch.Tensor) -> torch.Tensor:
         """y: (batch, m) → x_hat: (batch, N)"""
-        # x:
+        # x: 
         I = torch.eye(self.N, device=self.device)
-        S = I - self.B @ self.A                    # W2 = I − BA, [N,N] square matrix
-        x = torch.zeros(y.size(0), self.N, device=self.device)
+        S = I - self.B @ self.A                    # W2 = I − BA, [N,N] square matrix, B: [M,N]
+        x = torch.zeros(y.size(0), self.N, device=self.device)  # x is composed of row vectors of x_k
         for k in range(self.depth):
-            x = soft_threshold(x @ S.T + y @ self.B.T, self.theta[k])
-        return x
+            x = soft_threshold(x @ S.T + y @ self.B.T, self.theta[k]) 
+            # Theta is correct,  x [batch, N] @ S.T  [N, N]:[batch,N], y [batch, m] @ [m, N]-> [batch, N]
+        return x # correct shape
 
 
 # ---------- SRC 分类封装 ---------- #
