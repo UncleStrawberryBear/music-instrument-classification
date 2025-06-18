@@ -56,11 +56,11 @@ class LISTA(torch.nn.Module):
 
     def forward(self, y: torch.Tensor) -> torch.Tensor:
         """y: (batch, m) → x_hat: (batch, N)"""
-        # x: 
         print("The shape of B and y are: {}, {} respectively".format(self.B.shape, y.shape))
         I = torch.eye(self.N, device=self.device)
         S = I - self.B @ self.A                    # W2 = I − BA, [N,N] square matrix, B: [M,N]
         x = torch.zeros(y.size(0), self.N, device=self.device)  # x is composed of row vectors of x_k
+        print("The shape of x is:{}".format(x.shape))
         for k in range(self.depth):
             x = soft_threshold(x @ S.T + y @ self.B.T, self.theta[k]) 
             # Theta is correct,  x [batch, N] @ S.T  [N, N]:[batch,N], y [batch, m] @ [m, N]-> [batch, N]
