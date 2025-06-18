@@ -36,7 +36,7 @@ class LISTA(torch.nn.Module):
         learn_theta: bool = False,
         device: torch.device = torch.device("cpu"),
     ):
-        # A:[]
+        # A:[m, N]
         super().__init__()
         self.register_buffer("A", A.to(device))
         self.register_buffer("At", A.t().to(device))
@@ -57,6 +57,7 @@ class LISTA(torch.nn.Module):
     def forward(self, y: torch.Tensor) -> torch.Tensor:
         """y: (batch, m) → x_hat: (batch, N)"""
         # x: 
+        print("The shape of B and y are: {}, {} respectively".format(self.B.shape, y.shape))
         I = torch.eye(self.N, device=self.device)
         S = I - self.B @ self.A                    # W2 = I − BA, [N,N] square matrix, B: [M,N]
         x = torch.zeros(y.size(0), self.N, device=self.device)  # x is composed of row vectors of x_k
