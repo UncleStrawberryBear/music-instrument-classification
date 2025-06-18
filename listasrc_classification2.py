@@ -32,6 +32,8 @@ train_feats, train_lbls = extract_features(train_ds)        # (feat_dim, N_train
 test_feats , test_lbls  = extract_features(test_ds)         # (feat_dim, N_test)
 print("The shape of train_feats are:{}".format(train_feats.shape))
 print("The shape of train_lbls are:{}".format(train_lbls.shape))
+# The shape of train_feats are:(4096, 3804)
+# The shape of train_lbls are:(3804,), train is a vector which stores all music classes
 # demo：只取前 20 个测试样本
 test_feats, test_lbls   = test_feats[:, :20], test_lbls[:20]
 
